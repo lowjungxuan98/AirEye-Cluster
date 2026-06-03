@@ -206,6 +206,20 @@ endpoints.
 The existing platform keys for Postgres, Redis, Keycloak, MinIO, ArgoCD, and
 `aireye-app-secret` are still required by their respective workloads.
 
+AirEye backend requires `REDIS_URL` at `secret/aireye-app-secret`. The backend
+Deployment imports that Vault-synced Secret through `envFrom`, so adding the
+key to Vault makes it available as an environment variable:
+
+```text
+REDIS_URL                   # redis://:<url-encoded REDIS_PASSWORD>@redis.infra.svc.cluster.local:6379/0
+```
+
+To derive it from the shared Redis password and patch the app Vault path:
+
+```sh
+./scripts/add-aireye-redis-url.sh
+```
+
 Langfuse requires additional keys at `secret/langfuse-secret` (NEXTAUTH_SECRET,
 SALT, ENCRYPTION_KEY, LANGFUSE_INIT_PROJECT_PUBLIC_KEY,
 LANGFUSE_INIT_PROJECT_SECRET_KEY, CLICKHOUSE_PASSWORD, S3_ACCESS_KEY_ID,

@@ -184,6 +184,9 @@ KE vault kv put secret/aireye-cluster POSTGRES_USER=postgres ...
 
 # Mirror the surviving _raw payload from §2b:
 KE vault kv put secret/aireye-app-secret <key>=<value> ...
+
+# Restore the AirEye backend Redis URL after REDIS_PASSWORD exists:
+./scripts/add-aireye-redis-url.sh
 ```
 
 ### 7. Configure Vault auth methods

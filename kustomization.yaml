@@ -15,7 +15,7 @@ resources:
 
 images:
   - name: ghcr.io/lowjungxuan98/aireye/backend
-    newTag: 0.2.12
+    newTag: 0.2.14
 
 labels:
   - includeSelectors: false

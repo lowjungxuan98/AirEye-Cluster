@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/lowjungxuan98/aireye/backend:0.2.12
+          image: ghcr.io/lowjungxuan98/aireye/backend:0.2.14
           imagePullPolicy: Always
           ports:
             - name: http

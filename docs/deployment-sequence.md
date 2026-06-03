@@ -28,6 +28,14 @@ and the LiteLLM keys listed in the root README. Also create
 [argocd-image-updater.md](argocd-image-updater.md). No real secret values belong in
 git.
 
+Ensure `secret/aireye-app-secret` contains the AirEye backend app keys, including
+`REDIS_URL`. After `REDIS_PASSWORD` exists in `secret/aireye-cluster`, this
+helper derives the URL and patches only that key into the app Vault path:
+
+```sh
+./scripts/add-aireye-redis-url.sh
+```
+
 ### 3. Root Manifests
 
 ```sh
