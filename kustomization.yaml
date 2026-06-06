@@ -11,7 +11,6 @@ resources:
   - minio
   - aireye-app
   - litellm
-  - resume
 
 images:
   - name: ghcr.io/lowjungxuan98/aireye/backend

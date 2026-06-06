@@ -48,8 +48,6 @@ spec:
               path \"secret/data/aireye-app-secret\"    { capabilities = [\"create\", \"read\", \"update\"] }
               path \"secret/data/argocd-image-updater-git-creds\" { capabilities = [\"read\"] }
               path \"secret/data/langfuse-secret\"    { capabilities = [\"read\"] }
-              path \"secret/metadata/resume-secret\"  { capabilities = [\"list\", \"read\"] }
-              path \"secret/data/resume-secret\"      { capabilities = [\"read\"] }
               path \"auth/oidc/role/keycloak\"        { capabilities = [\"read\"] }
               EOF
               VAULT_TOKEN='$ROOT_TOKEN' vault policy write aireye-cluster-read /tmp/aireye-cluster-read.hcl"

@@ -57,14 +57,6 @@ trust diagram, and sync wave rationale.
 | argocd-image-updater | Automatically updates pinned AirEye backend image tags in Git | `quay.io/argoprojlabs/argocd-image-updater` |
 | litellm | Centralized AI API gateway | `ghcr.io/berriai/litellm:v1.83.14-stable.patch.3` |
 | langfuse | LLM observability and tracing | Helm chart `langfuse:1.5.31` from upstream |
-| resume | Reactive Resume (open-source resume builder) | `ghcr.io/amruthpillai/reactive-resume:latest` |
-
-### Reactive Resume
-
-[Reactive Resume](https://github.com/AmruthPillai/Reactive-Resume) is an
-open-source resume builder deployed as part of this personal cluster. It
-shares the same infrastructure (Postgres, MinIO, Keycloak, ingress-nginx)
-and uses Keycloak OIDC for authentication. Email-based login is disabled.
 
 ### Langfuse
 
@@ -90,7 +82,6 @@ project receive traces from LiteLLM callbacks automatically.
 ├── minio/                  # StatefulSet, console, Services, Ingress
 ├── postgres/               # StatefulSet, Service, PVC, init ConfigMap
 ├── redis/                  # StatefulSet, Service, PVC, smoke test
-├── resume/                 # Reactive Resume: Deployment, Service, Ingress, init Jobs
 ├── vault-secrets-operator/ # VaultConnection, VaultAuth, VaultStaticSecret resources
 ├── scripts/                # Local validation and cluster check scripts
 ├── namespace.yaml
@@ -178,7 +169,6 @@ The Vault convention is KV-v2 mount `secret`. Three paths are used:
 |------------|-----------------|-----------|
 | `secret/aireye-cluster` | `server-secret`, `litellm-secret` | Postgres, Redis, MinIO, Keycloak, ArgoCD OIDC, LiteLLM, Langfuse |
 | `secret/aireye-app-secret` | `aireye-app-secret` | aireye-app backend |
-| `secret/resume-secret` | `resume-secret` | Reactive Resume |
 | `secret/langfuse-secret` | `langfuse-secret` | Langfuse |
 
 ### Required Vault Keys
@@ -300,7 +290,6 @@ security scope.
 | `api.lowjungxuan.dpdns.org` | aireye-app backend |
 | `litellm.lowjungxuan.dpdns.org` | LiteLLM UI/API |
 | `langfuse.lowjungxuan.dpdns.org` | Langfuse UI |
-| `resume.lowjungxuan.dpdns.org` | Reactive Resume |
 
 ## LiteLLM Verification
 

@@ -16,7 +16,6 @@
 - [ ] aireye-app
 - [ ] litellm
 - [ ] langfuse
-- [ ] resume
 - [ ] docs / scripts
 
 ## Deployment Impact

@@ -8,7 +8,7 @@ assignees: ''
 
 ## Affected Component
 
-<!-- Which platform component? (ingress-nginx, postgres, redis, keycloak, vault/vso, minio, argocd, aireye-app, litellm, langfuse, resume) -->
+<!-- Which platform component? (ingress-nginx, postgres, redis, keycloak, vault/vso, minio, argocd, aireye-app, litellm, langfuse) -->
 
 ## Expected Behavior
 

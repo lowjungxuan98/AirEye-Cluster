@@ -12,9 +12,9 @@ Vault Secrets Operator configuration, ingress rules, and deployment topology in
 this repository.
 
 Out of scope: vulnerabilities in upstream projects (ingress-nginx, Vault,
-Keycloak, MinIO, LiteLLM, Langfuse, Reactive Resume) should be reported to
-those projects directly. Issues in the AirEye application codebase belong in
-the AirEye application repository.
+Keycloak, MinIO, LiteLLM, Langfuse) should be reported to those projects
+directly. Issues in the AirEye application codebase belong in the AirEye
+application repository.
 
 ## What to Report
 
