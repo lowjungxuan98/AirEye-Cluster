@@ -76,3 +76,39 @@ spec:
                 allowed_redirect_uris=https://vault.lowjungxuan.dpdns.org/ui/vault/auth/oidc/oidc/callback,http://localhost:8250/oidc/callback \
                 policies=default,aireye-cluster-read \
                 ttl=1h
+
+              # --- Full-access admin policy + per-user grant ---
+              # The OIDC role above gives every Keycloak login the same narrow
+              # read policy. To grant the provisioned admin user full access
+              # WITHOUT elevating everyone, attach an `admin` policy directly to
+              # that user's identity entity. Encoded here so the grant survives a
+              # Vault rebuild (not just a live, ad-hoc change).
+              kubectl exec -n infra vault-0 -- sh -ec "cat > /tmp/admin.hcl <<'EOF'
+              path \"*\" {
+                capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\", \"patch\", \"sudo\"]
+              }
+              EOF
+              VAULT_TOKEN='$ROOT_TOKEN' vault policy write admin /tmp/admin.hcl"
+
+              ADMIN_USER="$KEYCLOAK_USER_USERNAME"
+              OIDC_ACCESSOR=$(ve vault read -format=json sys/auth/oidc | jq -r '.data.accessor')
+
+              # If the user has already logged in, Vault auto-created an entity
+              # holding the OIDC alias; reuse it. Otherwise create entity+alias
+              # so a fresh login maps onto it. Either way -> policies=admin.
+              EID=""
+              for aid in $(ve vault list -format=json identity/entity-alias/id 2>/dev/null | jq -r '.data.keys[]?'); do
+                match=$(ve vault read -format=json "identity/entity-alias/id/$aid" \
+                  | jq -r --arg n "$ADMIN_USER" --arg a "$OIDC_ACCESSOR" \
+                      'select(.data.name==$n and .data.mount_accessor==$a) | .data.canonical_id')
+                if [ -n "$match" ]; then EID="$match"; break; fi
+              done
+
+              if [ -n "$EID" ]; then
+                ve vault write "identity/entity/id/$EID" policies=admin
+              else
+                ve vault write identity/entity name="$ADMIN_USER" policies=admin
+                EID=$(ve vault read -field=id "identity/entity/name/$ADMIN_USER")
+                ve vault write identity/entity-alias name="$ADMIN_USER" \
+                  canonical_id="$EID" mount_accessor="$OIDC_ACCESSOR"
+              fi
