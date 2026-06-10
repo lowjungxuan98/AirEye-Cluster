@@ -7,4 +7,5 @@ resources:
   - vault-auth.yaml
   - server-secret.yaml
   - aireye-app-secret.yaml
+  - aireye-genai-secret.yaml
   - litellm-secret.yaml

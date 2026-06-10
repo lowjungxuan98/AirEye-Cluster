@@ -23,3 +23,5 @@ spec:
       images:
         - alias: aireyebackend
           imageName: ghcr.io/lowjungxuan98/aireye/backend
+        - alias: aireyegenai
+          imageName: ghcr.io/lowjungxuan98/aireye/genai

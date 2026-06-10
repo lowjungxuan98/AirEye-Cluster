@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aireye-genai
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - genai.lowjungxuan.dpdns.org
+      secretName: aireye-genai-tls
+  rules:
+    - host: genai.lowjungxuan.dpdns.org
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: aireye-genai
+                port:
+                  number: 80

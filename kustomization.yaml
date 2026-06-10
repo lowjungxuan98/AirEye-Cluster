@@ -10,11 +10,14 @@ resources:
   - keycloak
   - minio
   - aireye-app
+  - aireye-genai
   - litellm
 
 images:
   - name: ghcr.io/lowjungxuan98/aireye/backend
     newTag: 0.2.14
+  - name: ghcr.io/lowjungxuan98/aireye/genai
+    newTag: 0.2.16
 
 labels:
   - includeSelectors: false
