@@ -88,6 +88,9 @@ spec:
               VAULT_TOKEN='$ROOT_TOKEN' vault policy write admin /tmp/admin.hcl"
 
               ADMIN_USER="$KC_USER_USERNAME"
+              if [ -z "$ADMIN_USER" ]; then
+                echo "KC_USER_USERNAME is empty; skipping admin-entity grant. Populate it in Vault to enable the per-user admin policy."
+              else
               OIDC_ACCESSOR=$(ve vault read -format=json sys/auth/oidc | jq -r '.data.accessor')
 
               # If the user has already logged in, Vault auto-created an entity
@@ -108,4 +111,5 @@ spec:
                 EID=$(ve vault read -field=id "identity/entity/name/$ADMIN_USER")
                 ve vault write identity/entity-alias name="$ADMIN_USER" \
                   canonical_id="$EID" mount_accessor="$OIDC_ACCESSOR"
+              fi
               fi

@@ -120,6 +120,33 @@ spec:
             deploy: true
             clusterEnabled: false
             replicaCount: 1
+            # Disable ClickHouse's internal telemetry tables. On this small,
+            # memory-overcommitted node their background merges blow past the
+            # ~2.25Gi server-memory cap (Code 241 MEMORY_LIMIT_EXCEEDED), which
+            # crashes ClickHouse and cascades into the langfuse-worker nil-pointer
+            # panic / CrashLoop. Also bound merge size as a safety net.
+            extraOverrides: |
+              <clickhouse>
+                <asynchronous_metric_log remove="1"/>
+                <metric_log remove="1"/>
+                <text_log remove="1"/>
+                <trace_log remove="1"/>
+                <latency_log remove="1"/>
+                <query_log remove="1"/>
+                <query_thread_log remove="1"/>
+                <query_views_log remove="1"/>
+                <part_log remove="1"/>
+                <processors_profile_log remove="1"/>
+                <opentelemetry_span_log remove="1"/>
+                <session_log remove="1"/>
+                <crash_log remove="1"/>
+                <backup_log remove="1"/>
+                <blob_storage_log remove="1"/>
+                <error_log remove="1"/>
+                <merge_tree>
+                  <max_bytes_to_merge_at_max_space_in_pool>1073741824</max_bytes_to_merge_at_max_space_in_pool>
+                </merge_tree>
+              </clickhouse>
             resources:
               requests:
                 cpu: 500m
