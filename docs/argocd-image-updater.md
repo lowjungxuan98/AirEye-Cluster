@@ -15,7 +15,7 @@ AirEye backend image updates are managed by Argo CD Image Updater.
 Create this Vault KV-v2 secret before syncing the Image Updater app:
 
 ```sh
-vault kv put secret/argocd-image-updater-git-creds \
+vault kv put secret/aireye-cluster/argo \
   username=lowjungxuan98 \
   password=<github-token-with-repo-write-access>
 ```

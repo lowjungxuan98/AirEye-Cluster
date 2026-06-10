@@ -137,11 +137,14 @@ kubectl apply -k ingress-nginx
 # 2. Install Cloudflare Origin Cert TLS Secrets (incl. vault-tls).
 # See docs/cloudflare-proxy.md.
 
-# 3. Pre-create the bootstrap secret with the Vault Postgres URL.
-# ArgoCD's vault app cannot start without this key, since the
-# Vault StatefulSet reads VAULT_PG_CONNECTION_URL from server-secret.
+# 3. Populate Vault subpaths and pre-create vault-secret.
+# On an existing cluster run the migration script:
+#   ./scripts/migrate-vault-secrets.sh
+# On a fresh cluster, populate secret/aireye-cluster/* directly
+# (see docs/deployment-sequence.md §2 for the full key listing),
+# then pre-create vault-secret:
 kubectl create namespace infra
-kubectl create secret generic -n infra server-secret \
+kubectl create secret generic -n infra vault-secret \
   --from-literal=VAULT_PG_CONNECTION_URL='postgresql://...'
 
 # 4. Bootstrap ArgoCD and the self-managed Applications.
@@ -163,58 +166,78 @@ Runtime secrets live exclusively in HashiCorp Vault and are synced into
 Kubernetes Secrets by Vault Secrets Operator. No real secret values enter
 this repository.
 
-The Vault convention is KV-v2 mount `secret`. Three paths are used:
+The Vault convention is KV-v2 mount `secret`. Each app code maps to one
+subpath and one Kubernetes Secret:
 
-| Vault Path | VSO Destination | Consumers |
-|------------|-----------------|-----------|
-| `secret/aireye-cluster` | `server-secret`, `litellm-secret` | Postgres, Redis, MinIO, Keycloak, ArgoCD OIDC, LiteLLM, Langfuse |
-| `secret/aireye-app-secret` | `aireye-app-secret` | aireye-app backend |
-| `secret/langfuse-secret` | `langfuse-secret` | Langfuse |
+| App Code | Vault Path | K8s Secret | Consumers |
+|----------|-----------|------------|-----------|
+| VAULT | `secret/aireye-cluster/vault` | `vault-secret` | Vault pod (PGURL) |
+| PG | `secret/aireye-cluster/pg` | `pg-secret` | Postgres, Keycloak, init jobs |
+| REDIS | `secret/aireye-cluster/redis` | `redis-secret` | Redis, ArgoCD, LiteLLM, Langfuse |
+| MINIO | `secret/aireye-cluster/minio` | `minio-secret` | MinIO, init jobs |
+| KC | `secret/aireye-cluster/kc` | `kc-secret` | Keycloak deployment + bootstrap job |
+| OIDC | `secret/aireye-cluster/oidc` | `oidc-secret`, `argocd-keycloak-oidc`, `langfuse-keycloak-oidc`, `litellm-oidc-secret` | Vault OIDC auth, ArgoCD, MinIO, LiteLLM, Langfuse |
+| ARGO | `secret/aireye-cluster/argo` | `argocd-image-updater-git-creds` | ArgoCD Image Updater |
+| LITELLM | `secret/aireye-cluster/litellm` | `litellm-secret` | LiteLLM |
+| LANGFUSE | `secret/aireye-cluster/langfuse` | `langfuse-secret` | Langfuse Helm chart |
+| APP | `secret/aireye-cluster/app` | `aireye-app-secret` | aireye-app backend |
 
 ### Required Vault Keys
 
-LiteLLM requires:
+LiteLLM (`secret/aireye-cluster/litellm`) requires:
 
 ```text
 LITELLM_MASTER_KEY          # must start with sk-
 LITELLM_SALT_KEY            # persistent value; do not rotate automatically
-DATABASE_URL                # postgresql://<user>:<password>@postgres.infra.svc.cluster.local:5432/litellm
-REDIS_HOST                  # redis.infra.svc.cluster.local
-REDIS_PORT                  # 6379
-REDIS_PASSWORD
+LITELLM_DATABASE_URL        # postgresql://<user>:<password>@postgres.infra.svc.cluster.local:5432/litellm
 OPENAI_API_KEY
 DEEPSEEK_API_KEY
 OPENROUTER_API_KEY
 NVIDIA_NIM_API_KEY
+LANGFUSE_PUBLIC_KEY
+LANGFUSE_SECRET_KEY
 ```
 
-LiteLLM SSO reuses the existing global Keycloak client values from
-`OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET`. VSO maps them into LiteLLM's
-`GENERIC_CLIENT_ID` and `GENERIC_CLIENT_SECRET` keys and adds the Keycloak OIDC
-endpoints.
+Redis (`secret/aireye-cluster/redis`) requires:
 
-The existing platform keys for Postgres, Redis, Keycloak, MinIO, ArgoCD, and
-`aireye-app-secret` are still required by their respective workloads.
+```text
+REDIS_HOST                  # redis.infra.svc.cluster.local
+REDIS_PORT                  # 6379
+REDIS_PASSWORD
+```
 
-AirEye backend requires `REDIS_URL` at `secret/aireye-app-secret`. The backend
-Deployment imports that Vault-synced Secret through `envFrom`, so adding the
-key to Vault makes it available as an environment variable:
+LiteLLM SSO reads `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` from
+`secret/aireye-cluster/oidc`. VSO maps them into `GENERIC_CLIENT_ID` and
+`GENERIC_CLIENT_SECRET` plus the Keycloak OIDC endpoint URLs, delivered
+via `litellm-oidc-secret`.
+
+AirEye backend (`secret/aireye-cluster/app`) requires `REDIS_URL`:
 
 ```text
 REDIS_URL                   # redis://:<url-encoded REDIS_PASSWORD>@redis.infra.svc.cluster.local:6379/0
 ```
 
-To derive it from the shared Redis password and patch the app Vault path:
+Derive it from the Redis password and patch the app path:
 
 ```sh
 ./scripts/add-aireye-redis-url.sh
 ```
 
-Langfuse requires additional keys at `secret/langfuse-secret` (NEXTAUTH_SECRET,
-SALT, ENCRYPTION_KEY, LANGFUSE_INIT_PROJECT_PUBLIC_KEY,
-LANGFUSE_INIT_PROJECT_SECRET_KEY, CLICKHOUSE_PASSWORD, S3_ACCESS_KEY_ID,
-S3_SECRET_ACCESS_KEY) and `langfuse-keycloak-oidc` (Keycloak OIDC client
-credentials). See `argocd/applications/langfuse.yaml` for the full schema.
+Langfuse (`secret/aireye-cluster/langfuse`) requires:
+
+```text
+LANGFUSE_NEXTAUTH_SECRET
+LANGFUSE_SALT
+LANGFUSE_ENCRYPTION_KEY
+LANGFUSE_CLICKHOUSE_PASSWORD
+LANGFUSE_S3_ACCESS_KEY_ID
+LANGFUSE_S3_SECRET_ACCESS_KEY
+LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+LANGFUSE_INIT_PROJECT_SECRET_KEY
+```
+
+See [docs/deployment-sequence.md](docs/deployment-sequence.md) for the
+complete key listing per subpath.
 
 ## Responsible Use
 

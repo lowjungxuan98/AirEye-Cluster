@@ -99,33 +99,57 @@ kubectl -n infra get secret aireye-app-secret \
 Generate fresh random values for anything not surfaced (typically
 `REDIS_PASSWORD`, all Keycloak admin/user passwords).
 
-### 3. Seed `server-secret` manually
+### 3. Seed `vault-secret` manually
 
-`server-secret` is normally produced by VSO from Vault, but Vault needs
-Postgres to start, and Postgres needs `server-secret`. Break the cycle
-by creating the Secret by hand. Values should match what you will write
-to Vault in step 5 — when VSO later overwrites the Secret with identical
+`vault-secret` is normally produced by VSO from `secret/aireye-cluster/vault`,
+but Vault needs Postgres to start, and Postgres needs `vault-secret`. Break
+the cycle by creating the Secret by hand. Values should match what you will
+write to Vault in step 5 — when VSO later overwrites the Secret with identical
 bytes, no rollout restart fires.
 
 ```sh
-kubectl -n infra create secret generic server-secret \
+kubectl -n infra create secret generic vault-secret \
+  --from-literal=VAULT_PG_CONNECTION_URL="postgresql://postgres:<recovered>@postgres.infra.svc.cluster.local:5432/vault?sslmode=disable" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Also seed the secrets required by the data-layer pods before they start:
+
+```sh
+kubectl -n infra create secret generic pg-secret \
   --from-literal=POSTGRES_USER=postgres \
   --from-literal=POSTGRES_PASSWORD=<recovered> \
   --from-literal=POSTGRES_DB=postgres \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n infra create secret generic redis-secret \
+  --from-literal=REDIS_HOST=redis.infra.svc.cluster.local \
+  --from-literal=REDIS_PORT=6379 \
   --from-literal=REDIS_PASSWORD=<generated> \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n infra create secret generic minio-secret \
   --from-literal=MINIO_ROOT_USER=<recovered> \
   --from-literal=MINIO_ROOT_PASSWORD=<recovered> \
-  --from-literal=OIDC_CLIENT_ID=<recovered> \
-  --from-literal=OIDC_CLIENT_SECRET=<recovered> \
-  --from-literal=KEYCLOAK_ADMIN=temp_admin \
-  --from-literal=KEYCLOAK_ADMIN_PASSWORD=<generated> \
-  --from-literal=KEYCLOAK_USER_USERNAME=<your-username> \
-  --from-literal=KEYCLOAK_USER_PASSWORD=<generated> \
-  --from-literal=KEYCLOAK_USER_EMAIL=<your-email> \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n infra create secret generic kc-secret \
+  --from-literal=KC_BOOTSTRAP_ADMIN_USERNAME=temp_admin \
+  --from-literal=KC_BOOTSTRAP_ADMIN_PASSWORD=<generated> \
+  --from-literal=KC_GITOPS_USERNAME=keycloak-gitops \
+  --from-literal=KC_GITOPS_PASSWORD=<generated> \
+  --from-literal=KC_GITOPS_EMAIL=<your-email> \
+  --from-literal=KC_USER_USERNAME=<your-username> \
+  --from-literal=KC_USER_PASSWORD=<generated> \
+  --from-literal=KC_USER_EMAIL=<your-email> \
   --from-literal=KC_DB=postgres \
   --from-literal=KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak \
   --from-literal=KC_DB_USERNAME=postgres \
-  --from-literal=VAULT_PG_CONNECTION_URL="postgresql://postgres:<recovered>@postgres.infra.svc.cluster.local:5432/vault?sslmode=disable" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n infra create secret generic oidc-secret \
+  --from-literal=OIDC_CLIENT_ID=<recovered> \
+  --from-literal=OIDC_CLIENT_SECRET=<recovered> \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
@@ -175,18 +199,70 @@ KE() { kubectl exec -n infra vault-0 -- env VAULT_TOKEN="$VT" "$@"; }
 
 KE vault secrets enable -path=secret kv-v2
 
-# Mirror every key from §3 plus the litellm templates VSO needs:
-#   LITELLM_MASTER_KEY, LITELLM_SALT_KEY, DATABASE_URL,
-#   REDIS_HOST=redis.infra.svc.cluster.local, REDIS_PORT=6379,
-#   OPENAI_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, NVIDIA_NIM_API_KEY
-#   (empty string is fine for provider keys you don't have).
-KE vault kv put secret/aireye-cluster POSTGRES_USER=postgres ...
+KE vault kv put secret/aireye-cluster/vault \
+  VAULT_PG_CONNECTION_URL="postgresql://postgres:<recovered>@postgres.infra.svc.cluster.local:5432/vault?sslmode=disable"
 
-# Mirror the surviving _raw payload from §2b:
-KE vault kv put secret/aireye-app-secret <key>=<value> ...
+KE vault kv put secret/aireye-cluster/pg \
+  PG_USER=postgres \
+  PG_PASSWORD=<recovered> \
+  PG_DB=postgres
+
+KE vault kv put secret/aireye-cluster/redis \
+  REDIS_HOST=redis.infra.svc.cluster.local \
+  REDIS_PORT=6379 \
+  REDIS_PASSWORD=<generated>
+
+KE vault kv put secret/aireye-cluster/minio \
+  MINIO_ROOT_USER=<recovered> \
+  MINIO_ROOT_PASSWORD=<recovered>
+
+KE vault kv put secret/aireye-cluster/kc \
+  KC_BOOTSTRAP_ADMIN_USERNAME=temp_admin \
+  KC_BOOTSTRAP_ADMIN_PASSWORD=<generated> \
+  KC_GITOPS_USERNAME=keycloak-gitops \
+  KC_GITOPS_PASSWORD=<generated> \
+  KC_GITOPS_EMAIL=<your-email> \
+  KC_USER_USERNAME=<your-username> \
+  KC_USER_PASSWORD=<generated> \
+  KC_USER_EMAIL=<your-email> \
+  KC_DB=postgres \
+  KC_DB_URL="jdbc:postgresql://postgres:5432/keycloak" \
+  KC_DB_USERNAME=postgres
+
+KE vault kv put secret/aireye-cluster/oidc \
+  OIDC_CLIENT_ID=<recovered> \
+  OIDC_CLIENT_SECRET=<recovered>
+
+KE vault kv put secret/aireye-cluster/litellm \
+  LITELLM_MASTER_KEY=<recovered> \
+  LITELLM_SALT_KEY=<recovered> \
+  LITELLM_DATABASE_URL="postgresql://postgres:<recovered>@postgres.infra.svc.cluster.local:5432/litellm" \
+  OPENAI_API_KEY=<recovered> \
+  DEEPSEEK_API_KEY=<recovered> \
+  OPENROUTER_API_KEY=<recovered> \
+  NVIDIA_NIM_API_KEY=<recovered> \
+  LANGFUSE_PUBLIC_KEY=<recovered> \
+  LANGFUSE_SECRET_KEY=<recovered>
+
+KE vault kv put secret/aireye-cluster/langfuse \
+  LANGFUSE_NEXTAUTH_SECRET=<recovered> \
+  LANGFUSE_SALT=<recovered> \
+  LANGFUSE_ENCRYPTION_KEY=<recovered> \
+  LANGFUSE_CLICKHOUSE_PASSWORD=<recovered> \
+  LANGFUSE_S3_ACCESS_KEY_ID=<recovered> \
+  LANGFUSE_S3_SECRET_ACCESS_KEY=<recovered> \
+  LANGFUSE_INIT_PROJECT_PUBLIC_KEY=<recovered> \
+  LANGFUSE_INIT_PROJECT_SECRET_KEY=<recovered>
+
+# Mirror the surviving app payload from §2b:
+KE vault kv put secret/aireye-cluster/app <key>=<value> ...
 
 # Restore the AirEye backend Redis URL after REDIS_PASSWORD exists:
 ./scripts/add-aireye-redis-url.sh
+
+KE vault kv put secret/aireye-cluster/argo \
+  username=<github-username> \
+  password=<github-token>
 ```
 
 ### 7. Configure Vault auth methods
@@ -212,8 +288,8 @@ missing or self-signed.
 
 ### 8. Restart consumers
 
-VSO overwrites the hand-seeded `server-secret` with the Vault-sourced
-version. If values match, no restart fires. To be safe:
+VSO overwrites the hand-seeded Secrets with Vault-sourced versions.
+If values match, no restart fires. To be safe:
 
 ```sh
 kubectl -n infra rollout restart \

@@ -51,12 +51,12 @@ spec:
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:
-                    name: server-secret
+                    name: minio-secret
                     key: MINIO_ROOT_USER
               - name: AWS_SECRET_ACCESS_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: server-secret
+                    name: minio-secret
                     key: MINIO_ROOT_PASSWORD
             tolerations:
               - key: node-role.kubernetes.io/control-plane

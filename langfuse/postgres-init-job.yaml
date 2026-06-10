@@ -22,12 +22,12 @@ spec:
             - name: PGUSER
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: pg-secret
                   key: POSTGRES_USER
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: pg-secret
                   key: POSTGRES_PASSWORD
           command:
             - /bin/sh

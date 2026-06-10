@@ -15,7 +15,9 @@ spec:
           image: quay.io/keycloak/keycloak:26.6.1
           envFrom:
             - secretRef:
-                name: server-secret
+                name: kc-secret
+            - secretRef:
+                name: oidc-secret
           command:
             - /bin/sh
             - -ec
@@ -24,8 +26,8 @@ spec:
               KCADM=/opt/keycloak/bin/kcadm.sh
               SERVER=http://keycloak.infra.svc.cluster.local
               REALM=master
-              BOOTSTRAP_USERNAME=${KEYCLOAK_BOOTSTRAP_USERNAME:-keycloak-gitops}
-              BOOTSTRAP_PASSWORD=${KEYCLOAK_BOOTSTRAP_PASSWORD:-$KEYCLOAK_ADMIN_PASSWORD}
+              BOOTSTRAP_USERNAME=${KC_GITOPS_USERNAME:-keycloak-gitops}
+              BOOTSTRAP_PASSWORD=${KC_GITOPS_PASSWORD:-$KC_BOOTSTRAP_ADMIN_PASSWORD}
 
               login() {
                 "$KCADM" config credentials \
@@ -35,8 +37,8 @@ spec:
               }
 
               login "$BOOTSTRAP_USERNAME" "$BOOTSTRAP_PASSWORD" \
-                || login "$KEYCLOAK_ADMIN" "$KEYCLOAK_ADMIN_PASSWORD" \
-                || login "$KEYCLOAK_USER_USERNAME" "$KEYCLOAK_USER_PASSWORD"
+                || login "$KC_BOOTSTRAP_ADMIN_USERNAME" "$KC_BOOTSTRAP_ADMIN_PASSWORD" \
+                || login "$KC_USER_USERNAME" "$KC_USER_PASSWORD"
 
               upsert_user() {
                 USERNAME=$1
@@ -138,11 +140,11 @@ spec:
                 fi
               }
 
-              upsert_user "$BOOTSTRAP_USERNAME" "$BOOTSTRAP_PASSWORD" "${KEYCLOAK_BOOTSTRAP_EMAIL:-}"
+              upsert_user "$BOOTSTRAP_USERNAME" "$BOOTSTRAP_PASSWORD" "${KC_GITOPS_EMAIL:-}"
               grant_admin "$BOOTSTRAP_USERNAME"
 
-              upsert_user "$KEYCLOAK_USER_USERNAME" "$KEYCLOAK_USER_PASSWORD" "$KEYCLOAK_USER_EMAIL"
-              grant_admin "$KEYCLOAK_USER_USERNAME"
+              upsert_user "$KC_USER_USERNAME" "$KC_USER_PASSWORD" "$KC_USER_EMAIL"
+              grant_admin "$KC_USER_USERNAME"
 
               # Bump access-token lifespan from the 60s default to 15m so
               # idle browser tabs in Argo CD / MinIO / LiteLLM don't churn
@@ -160,9 +162,9 @@ spec:
               # admin can't delete itself if it's the active session).
               # Future runs authenticate through BOOTSTRAP_USERNAME, so the
               # temporary recovery admin can be removed after bootstrap.
-              if [ "$BOOTSTRAP_USERNAME" != "$KEYCLOAK_ADMIN" ]; then
+              if [ "$BOOTSTRAP_USERNAME" != "$KC_BOOTSTRAP_ADMIN_USERNAME" ]; then
                 TEMP_ADMIN_ID=$("$KCADM" get users -r "$REALM" \
-                  -q username="$KEYCLOAK_ADMIN" --fields id \
+                  -q username="$KC_BOOTSTRAP_ADMIN_USERNAME" --fields id \
                   --format csv --noquotes | head -n 1)
                 if [ -n "$TEMP_ADMIN_ID" ]; then
                   "$KCADM" config credentials \

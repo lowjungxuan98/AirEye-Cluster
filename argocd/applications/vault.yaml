@@ -40,7 +40,7 @@ spec:
                 disable_mlock = true
             extraSecretEnvironmentVars:
               - envName: VAULT_PG_CONNECTION_URL
-                secretName: server-secret
+                secretName: vault-secret
                 secretKey: VAULT_PG_CONNECTION_URL
             tolerations:
               - key: node-role.kubernetes.io/control-plane

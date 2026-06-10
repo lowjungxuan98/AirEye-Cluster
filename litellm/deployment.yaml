@@ -39,6 +39,10 @@ spec:
           envFrom:
             - secretRef:
                 name: litellm-secret
+            - secretRef:
+                name: redis-secret
+            - secretRef:
+                name: litellm-oidc-secret
           env:
             - name: STORE_MODEL_IN_DB
               value: "true"

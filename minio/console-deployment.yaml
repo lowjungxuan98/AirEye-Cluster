@@ -24,12 +24,12 @@ spec:
             - name: CONSOLE_IDP_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: oidc-secret
                   key: OIDC_CLIENT_ID
             - name: CONSOLE_IDP_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: oidc-secret
                   key: OIDC_CLIENT_SECRET
             - name: CONSOLE_IDP_CALLBACK
               value: https://minio.lowjungxuan.dpdns.org

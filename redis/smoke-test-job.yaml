@@ -27,7 +27,7 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: redis-secret
                   key: REDIS_PASSWORD
           resources:
             requests:

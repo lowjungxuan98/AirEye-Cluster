@@ -93,7 +93,7 @@ spec:
             port: 5432
             auth:
               username: postgres
-              existingSecret: server-secret
+              existingSecret: pg-secret
               secretKeys:
                 userPasswordKey: POSTGRES_PASSWORD
                 adminPasswordKey: POSTGRES_PASSWORD
@@ -105,7 +105,7 @@ spec:
             port: 6379
             auth:
               username: null
-              existingSecret: server-secret
+              existingSecret: redis-secret
               existingSecretPasswordKey: REDIS_PASSWORD
               database: 0
             cluster:

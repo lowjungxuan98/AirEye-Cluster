@@ -23,7 +23,7 @@ spec:
             - --proxy-headers=xforwarded
           envFrom:
             - secretRef:
-                name: server-secret
+                name: kc-secret
           env:
             - name: KC_HEALTH_ENABLED
               value: "true"
@@ -36,7 +36,7 @@ spec:
             - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: pg-secret
                   key: POSTGRES_PASSWORD
           ports:
             - containerPort: 8080

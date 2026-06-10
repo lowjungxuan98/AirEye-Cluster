@@ -17,7 +17,7 @@ spec:
           image: alpine/k8s:1.36.0
           envFrom:
             - secretRef:
-                name: server-secret
+                name: oidc-secret
           command:
             - /bin/sh
             - -ec
@@ -40,17 +40,12 @@ spec:
               path \"secret/metadata\"                { capabilities = [\"list\"] }
               path \"secret/metadata/aireye-cluster\"       { capabilities = [\"list\", \"read\"] }
               path \"secret/metadata/aireye-cluster/*\"     { capabilities = [\"list\", \"read\"] }
-              path \"secret/metadata/aireye-app-secret\" { capabilities = [\"list\", \"read\"] }
               path \"secret/metadata/aireye-genai-secret\" { capabilities = [\"list\", \"read\"] }
-              path \"secret/metadata/argocd-image-updater-git-creds\" { capabilities = [\"list\", \"read\"] }
-              path \"secret/metadata/langfuse-secret\" { capabilities = [\"list\", \"read\"] }
               path \"secret/metadata/grafana-secret\" { capabilities = [\"list\", \"read\"] }
               path \"secret/data/aireye-cluster\"           { capabilities = [\"read\"] }
               path \"secret/data/aireye-cluster/*\"         { capabilities = [\"read\"] }
-              path \"secret/data/aireye-app-secret\"    { capabilities = [\"create\", \"read\", \"update\"] }
+              path \"secret/data/aireye-cluster/app\"       { capabilities = [\"create\", \"read\", \"update\"] }
               path \"secret/data/aireye-genai-secret\"  { capabilities = [\"read\"] }
-              path \"secret/data/argocd-image-updater-git-creds\" { capabilities = [\"read\"] }
-              path \"secret/data/langfuse-secret\"    { capabilities = [\"read\"] }
               path \"secret/data/grafana-secret\"     { capabilities = [\"read\"] }
               path \"auth/oidc/role/keycloak\"        { capabilities = [\"read\"] }
               EOF
@@ -94,7 +89,7 @@ spec:
               EOF
               VAULT_TOKEN='$ROOT_TOKEN' vault policy write admin /tmp/admin.hcl"
 
-              ADMIN_USER="$KEYCLOAK_USER_USERNAME"
+              ADMIN_USER="$KC_USER_USERNAME"
               OIDC_ACCESSOR=$(ve vault read -format=json sys/auth/oidc | jq -r '.data.accessor')
 
               # If the user has already logged in, Vault auto-created an entity

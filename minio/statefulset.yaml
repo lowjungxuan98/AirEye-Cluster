@@ -32,7 +32,7 @@ spec:
             - :9001
           envFrom:
             - secretRef:
-                name: server-secret
+                name: minio-secret
           env:
             - name: MINIO_BROWSER_REDIRECT_URL
               value: https://minio.lowjungxuan.dpdns.org
@@ -41,12 +41,12 @@ spec:
             - name: MINIO_IDENTITY_OPENID_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: oidc-secret
                   key: OIDC_CLIENT_ID
             - name: MINIO_IDENTITY_OPENID_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: server-secret
+                  name: oidc-secret
                   key: OIDC_CLIENT_SECRET
             - name: MINIO_IDENTITY_OPENID_DISPLAY_NAME
               value: Keycloak

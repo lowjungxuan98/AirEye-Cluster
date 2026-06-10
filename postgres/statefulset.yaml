@@ -27,7 +27,7 @@ spec:
           image: postgres:18-alpine
           envFrom:
             - secretRef:
-                name: server-secret
+                name: pg-secret
           ports:
             - containerPort: 5432
               name: postgres
