@@ -120,7 +120,12 @@ spec:
             deploy: true
             clusterEnabled: false
             replicaCount: 1
-            resourcesPreset: medium
+            resources:
+              requests:
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                memory: 2560Mi
             auth:
               username: default
               existingSecret: langfuse-secret

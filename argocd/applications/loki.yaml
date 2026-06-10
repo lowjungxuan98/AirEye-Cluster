@@ -78,10 +78,7 @@ spec:
             annotations:
               nginx.ingress.kubernetes.io/proxy-body-size: "0"
             hosts:
-              - host: loki.lowjungxuan.dpdns.org
-                paths:
-                  - path: /
-                    pathType: Prefix
+              - loki.lowjungxuan.dpdns.org
             tls:
               - hosts:
                   - loki.lowjungxuan.dpdns.org
