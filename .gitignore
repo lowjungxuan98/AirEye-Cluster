@@ -4,3 +4,4 @@ reloader/charts/
 .claude/
 .cursor/
 .codex/
+*.bak

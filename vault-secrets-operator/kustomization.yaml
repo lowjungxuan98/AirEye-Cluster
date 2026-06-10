@@ -9,3 +9,10 @@ resources:
   - aireye-app-secret.yaml
   - aireye-genai-secret.yaml
   - litellm-secret.yaml
+  - vault-secret.yaml
+  - pg-secret.yaml
+  - redis-secret.yaml
+  - minio-secret.yaml
+  - kc-secret.yaml
+  - oidc-secret.yaml
+  - litellm-oidc-secret.yaml

@@ -1,0 +1,170 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 70.4.2
+    helm:
+      releaseName: kube-prometheus-stack
+      values: |
+        grafana:
+          admin:
+            existingSecret: grafana-secret
+            userKey: GF_SECURITY_ADMIN_USER
+            passwordKey: GF_SECURITY_ADMIN_PASSWORD
+          envFromSecret: grafana-secret
+          grafana.ini:
+            server:
+              domain: grafana.lowjungxuan.dpdns.org
+              root_url: https://grafana.lowjungxuan.dpdns.org
+            auth.generic_oauth:
+              enabled: true
+              name: Keycloak
+              allow_sign_up: true
+              client_id: ${GF_AUTH_GENERIC_OAUTH_CLIENT_ID}
+              client_secret: ${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
+              scopes: openid email profile
+              auth_url: https://keycloak.lowjungxuan.dpdns.org/realms/master/protocol/openid-connect/auth
+              token_url: https://keycloak.lowjungxuan.dpdns.org/realms/master/protocol/openid-connect/token
+              api_url: https://keycloak.lowjungxuan.dpdns.org/realms/master/protocol/openid-connect/userinfo
+              role_attribute_path: "contains(groups[*], 'admin') && 'Admin' || 'Viewer'"
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              nginx.ingress.kubernetes.io/proxy-body-size: "0"
+            hosts:
+              - grafana.lowjungxuan.dpdns.org
+            tls:
+              - hosts:
+                  - grafana.lowjungxuan.dpdns.org
+                secretName: grafana-tls
+          persistence:
+            enabled: true
+            storageClassName: local-path
+            size: 5Gi
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki.infra.svc.cluster.local:3100
+              isDefault: false
+              jsonData:
+                maxLines: 1000
+
+        prometheus:
+          prometheusSpec:
+            retention: 30d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 20Gi
+            tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                effect: NoSchedule
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector:
+              matchNames:
+                - infra
+            additionalServiceMonitors:
+              - name: aireye-app
+                selector:
+                  matchLabels:
+                    app: aireye-app
+                namespaceSelector:
+                  matchNames:
+                    - infra
+                endpoints:
+                  - port: http
+                    path: /metrics
+                    interval: 30s
+              - name: aireye-genai
+                selector:
+                  matchLabels:
+                    app: aireye-genai
+                namespaceSelector:
+                  matchNames:
+                    - infra
+                endpoints:
+                  - port: http
+                    path: /metrics
+                    interval: 30s
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              nginx.ingress.kubernetes.io/proxy-body-size: "0"
+            hosts:
+              - prometheus.lowjungxuan.dpdns.org
+            tls:
+              - hosts:
+                  - prometheus.lowjungxuan.dpdns.org
+                secretName: prometheus-tls
+
+        alertmanager:
+          alertmanagerSpec:
+            tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                effect: NoSchedule
+
+        prometheusOperator:
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+
+        kube-state-metrics:
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+
+        prometheus-node-exporter:
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
