@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: argocd
 
 resources:
+  - app-of-apps.yaml
   - vault.yaml
   - vault-secrets-operator.yaml
   - langfuse.yaml
