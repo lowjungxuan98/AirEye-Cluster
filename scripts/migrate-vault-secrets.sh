@@ -50,7 +50,7 @@ vault_kv_put_from_json() {
   PATH_ARG="$1"
   JSON_ARG="$2"
   printf '%s\n%s\n' "$ROOT_TOKEN" "$JSON_ARG" |
-    kubectl -n "$NAMESPACE" exec -i "$VAULT_POD" -- python3 -ec "
+    kubectl -n "$NAMESPACE" exec -i "$VAULT_POD" -- python3 -c "
 import sys, json, subprocess, os
 root_token = sys.stdin.readline().rstrip('\n')
 data = json.loads(sys.stdin.read())
@@ -73,7 +73,7 @@ migrate_subpath() {
   DEST_PATH="$2"
   shift 2
   # Remaining args: dest_key=src_key pairs (or dest_key=@literal for literal values)
-  python3 -ec "
+  python3 -c "
 import json, sys
 src = json.loads(sys.argv[1])
 pairs = sys.argv[2:]
@@ -120,7 +120,7 @@ SRC_ARGO="$(read_path_data secret/argocd-image-updater-git-creds)"
 
 MAPPED_CLUSTER_KEYS="VAULT_PG_CONNECTION_URL POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB REDIS_HOST REDIS_PORT REDIS_PASSWORD MINIO_ROOT_USER MINIO_ROOT_PASSWORD KEYCLOAK_ADMIN KEYCLOAK_ADMIN_PASSWORD KEYCLOAK_BOOTSTRAP_USERNAME KEYCLOAK_BOOTSTRAP_PASSWORD KEYCLOAK_BOOTSTRAP_EMAIL KEYCLOAK_USER_USERNAME KEYCLOAK_USER_PASSWORD KEYCLOAK_USER_EMAIL KC_DB KC_DB_URL KC_DB_USERNAME OIDC_CLIENT_ID OIDC_CLIENT_SECRET LITELLM_MASTER_KEY LITELLM_SALT_KEY DATABASE_URL OPENAI_API_KEY DEEPSEEK_API_KEY OPENROUTER_API_KEY NVIDIA_NIM_API_KEY LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY"
 
-UNMAPPED="$(python3 -ec "
+UNMAPPED="$(python3 -c "
 import json, sys
 src = json.loads(sys.argv[1])
 mapped = set(sys.argv[2].split())
@@ -160,7 +160,7 @@ echo "  OK"
 echo "--- aireye-cluster/redis ---"
 # REDIS_HOST and REDIS_PORT may not be in the flat path (could be hardcoded elsewhere).
 # Use defaults if missing.
-OUT="$(python3 -ec "
+OUT="$(python3 -c "
 import json, sys
 src = json.loads(sys.argv[1])
 out = {
@@ -181,7 +181,7 @@ vault_kv_put_from_json secret/aireye-cluster/minio "$OUT"
 echo "  OK"
 
 echo "--- aireye-cluster/kc ---"
-OUT="$(python3 -ec "
+OUT="$(python3 -c "
 import json, sys
 src = json.loads(sys.argv[1])
 out = {
@@ -242,7 +242,7 @@ echo "--- aireye-cluster/langfuse (from secret/langfuse-secret, keys renamed) --
 if [ "$(printf '%s' "$SRC_LANGFUSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d))")" -eq 0 ]; then
   echo "  WARN: secret/langfuse-secret is empty or missing — skipping" >&2
 else
-  OUT="$(python3 -ec "
+  OUT="$(python3 -c "
 import json, sys
 src = json.loads(sys.argv[1])
 rename = {
