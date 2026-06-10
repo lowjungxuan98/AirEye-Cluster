@@ -46,20 +46,28 @@ vault_kv_get_json() {
 
 vault_kv_put_from_json() {
   # Args: path json_object
-  # Writes all key=value pairs from the JSON object to the Vault path.
+  # Writes all key=value pairs to the Vault KV-v2 path via the HTTP API.
+  # JSON is base64-encoded locally so values with special chars survive piping.
   PATH_ARG="$1"
   JSON_ARG="$2"
-  printf '%s\n%s\n' "$ROOT_TOKEN" "$JSON_ARG" |
-    kubectl -n "$NAMESPACE" exec -i "$VAULT_POD" -- python3 -c "
-import sys, json, subprocess, os
-root_token = sys.stdin.readline().rstrip('\n')
-data = json.loads(sys.stdin.read())
-kv_args = ['vault', 'kv', 'put', sys.argv[1]]
-for k, v in data.items():
-    kv_args.append(f'{k}={v}')
-env = {**os.environ, 'VAULT_TOKEN': root_token}
-subprocess.check_call(kv_args, env=env, stdout=subprocess.DEVNULL)
-" "$PATH_ARG"
+  B64="$(python3 -c "
+import json, sys, base64
+data = json.loads(sys.argv[1])
+payload = json.dumps({'data': data})
+print(base64.b64encode(payload.encode()).decode())
+" "$JSON_ARG")"
+  KV_PATH="${PATH_ARG#secret/}"
+  printf '%s\n%s\n' "$ROOT_TOKEN" "$B64" |
+    kubectl -n "$NAMESPACE" exec -i "$VAULT_POD" -- sh -c '
+      IFS= read -r VAULT_TOKEN
+      IFS= read -r B64
+      PAYLOAD="$(printf "%s" "$B64" | base64 -d)"
+      wget -qO /dev/null \
+        --header="X-Vault-Token: $VAULT_TOKEN" \
+        --header="Content-Type: application/json" \
+        --post-data="$PAYLOAD" \
+        "http://127.0.0.1:8200/v1/secret/data/'"$KV_PATH"'"
+    '
 }
 
 read_path_data() {
