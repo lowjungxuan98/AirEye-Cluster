@@ -16,6 +16,11 @@ spec:
         releaseName: langfuse
         values: |
           langfuse:
+            web:
+              livenessProbe:
+                initialDelaySeconds: 120
+              readinessProbe:
+                initialDelaySeconds: 120
             nextauth:
               url: https://langfuse.lowjungxuan.dpdns.org
               secret:
