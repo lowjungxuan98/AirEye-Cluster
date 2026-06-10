@@ -72,6 +72,13 @@ spec:
           gateway:
             enabled: false
 
+          # SingleBinary on a single node: the chart's memcached caches request
+          # ~9.6Gi (chunks) / 1.2Gi (results) and cannot fit. Loki caches in-process.
+          chunksCache:
+            enabled: false
+          resultsCache:
+            enabled: false
+
           ingress:
             enabled: true
             ingressClassName: nginx
