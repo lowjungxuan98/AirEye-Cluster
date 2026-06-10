@@ -41,12 +41,10 @@ spec:
               path \"secret/metadata/aireye-cluster\"       { capabilities = [\"list\", \"read\"] }
               path \"secret/metadata/aireye-cluster/*\"     { capabilities = [\"list\", \"read\"] }
               path \"secret/metadata/aireye-genai-secret\" { capabilities = [\"list\", \"read\"] }
-              path \"secret/metadata/grafana-secret\" { capabilities = [\"list\", \"read\"] }
               path \"secret/data/aireye-cluster\"           { capabilities = [\"read\"] }
               path \"secret/data/aireye-cluster/*\"         { capabilities = [\"read\"] }
               path \"secret/data/aireye-cluster/app\"       { capabilities = [\"create\", \"read\", \"update\"] }
               path \"secret/data/aireye-genai-secret\"  { capabilities = [\"read\"] }
-              path \"secret/data/grafana-secret\"     { capabilities = [\"read\"] }
               path \"auth/oidc/role/keycloak\"        { capabilities = [\"read\"] }
               EOF
               VAULT_TOKEN='$ROOT_TOKEN' vault policy write aireye-cluster-read /tmp/aireye-cluster-read.hcl"

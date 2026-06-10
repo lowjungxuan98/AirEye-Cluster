@@ -39,7 +39,6 @@ Vault secret/ (KV-v2 mount)
   +-- aireye-cluster/argo     →  argocd-image-updater-git-creds
   +-- aireye-cluster/app      →  aireye-app-secret   (AirEye backend app keys)
   +-- aireye-genai-secret     →  aireye-genai-secret (AirEye GenAI app keys)
-  +-- grafana-secret          →  grafana-secret      (Grafana admin password)
 ```
 
 Each app code maps to exactly one Vault subpath and one Kubernetes Secret:

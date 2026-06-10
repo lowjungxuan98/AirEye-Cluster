@@ -8,6 +8,3 @@ resources:
   - langfuse.yaml
   - argocd-image-updater.yaml
   - aireye-cluster.yaml
-  - kube-prometheus-stack.yaml
-  - loki.yaml
-  - promtail.yaml

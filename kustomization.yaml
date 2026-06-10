@@ -12,7 +12,6 @@ resources:
   - aireye-app
   - aireye-genai
   - litellm
-  - monitoring
 
 images:
   - name: ghcr.io/lowjungxuan98/aireye/backend

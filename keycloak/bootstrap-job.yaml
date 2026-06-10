@@ -152,8 +152,8 @@ spec:
               "$KCADM" update "realms/$REALM" -s accessTokenLifespan=900
 
               GLOBAL_UUID=$(upsert_client "$OIDC_CLIENT_ID" "$OIDC_CLIENT_SECRET" \
-                '["https://vault.lowjungxuan.dpdns.org/ui/vault/auth/oidc/oidc/callback","http://localhost:8250/oidc/callback","https://argocd.lowjungxuan.dpdns.org/auth/callback","https://argocd.lowjungxuan.dpdns.org/*","argocd://auth/callback","http://localhost:8085/auth/callback","https://minio.lowjungxuan.dpdns.org/oauth_callback","https://minio.lowjungxuan.dpdns.org/*","https://s3.lowjungxuan.dpdns.org/oauth_callback","https://s3.lowjungxuan.dpdns.org/*","https://litellm.lowjungxuan.dpdns.org/sso/callback","https://litellm.lowjungxuan.dpdns.org/sso/debug/callback","https://langfuse.lowjungxuan.dpdns.org/api/auth/callback/keycloak","https://grafana.lowjungxuan.dpdns.org/login/generic_oauth"]' \
-                '["https://vault.lowjungxuan.dpdns.org","https://argocd.lowjungxuan.dpdns.org","https://minio.lowjungxuan.dpdns.org","https://s3.lowjungxuan.dpdns.org","https://litellm.lowjungxuan.dpdns.org","https://langfuse.lowjungxuan.dpdns.org","https://grafana.lowjungxuan.dpdns.org"]')
+                '["https://vault.lowjungxuan.dpdns.org/ui/vault/auth/oidc/oidc/callback","http://localhost:8250/oidc/callback","https://argocd.lowjungxuan.dpdns.org/auth/callback","https://argocd.lowjungxuan.dpdns.org/*","argocd://auth/callback","http://localhost:8085/auth/callback","https://minio.lowjungxuan.dpdns.org/oauth_callback","https://minio.lowjungxuan.dpdns.org/*","https://s3.lowjungxuan.dpdns.org/oauth_callback","https://s3.lowjungxuan.dpdns.org/*","https://litellm.lowjungxuan.dpdns.org/sso/callback","https://litellm.lowjungxuan.dpdns.org/sso/debug/callback","https://langfuse.lowjungxuan.dpdns.org/api/auth/callback/keycloak"]' \
+                '["https://vault.lowjungxuan.dpdns.org","https://argocd.lowjungxuan.dpdns.org","https://minio.lowjungxuan.dpdns.org","https://s3.lowjungxuan.dpdns.org","https://litellm.lowjungxuan.dpdns.org","https://langfuse.lowjungxuan.dpdns.org"]')
 
               upsert_minio_policy_mapper "$GLOBAL_UUID"
 
