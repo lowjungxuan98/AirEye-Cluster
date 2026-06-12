@@ -1,4 +1,4 @@
 kustomize:
   images:
   - ghcr.io/lowjungxuan98/aireye/backend:0.2.18
-  - ghcr.io/lowjungxuan98/aireye/genai:0.2.16
+  - ghcr.io/lowjungxuan98/aireye/genai:0.2.18
